@@ -1,6 +1,8 @@
 # pb-tool — Protocol Benchmarking Tool
 
-Cross-machine benchmarking framework for IoT/mobility communication protocols. Measures end-to-end latency, jitter, packet loss, and throughput across the full serialization + compression + transport pipeline, with nanosecond-resolution timestamps and NTP-corrected cross-machine delay. Developed for the **MASA** (Modena Automotive Smart Area) research initiative.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+Cross-machine benchmarking framework for IoT/mobility communication protocols. Measures end-to-end latency, jitter, packet loss, and throughput across the full serialization + compression + transport pipeline, with nanosecond-resolution timestamps and NTP-corrected cross-machine delay.
 
 ## Quick Start
 
@@ -26,11 +28,11 @@ cmake --build build -j$(sysctl -n hw.logicalcpu)   # macOS
 
 | Section | File |
 |---------|------|
-| Info generali & pipeline | [docs/overview.md](docs/overview.md) |
-| Architettura & diagrammi UML | [docs/architecture.md](docs/architecture.md) |
-| Compilazione | [docs/build.md](docs/build.md) |
-| Esecuzione & CLI reference | [docs/running.md](docs/running.md) |
-| Analisi risultati (Python) | [docs/analyzer.md](docs/analyzer.md) |
-| Estendere il tool | [docs/extending.md](docs/extending.md) |
-| Decisioni architetturali | [docs/adr/](docs/adr/) |
-| Glossario | [CONTEXT.md](CONTEXT.md) |
+| General info & pipeline | [docs/overview.md](docs/overview.md) |
+| Architecture & UML diagrams | [docs/architecture.md](docs/architecture.md) |
+| Build | [docs/build.md](docs/build.md) |
+| Running & CLI reference | [docs/running.md](docs/running.md) |
+| Result analysis (Python) | [docs/analyzer.md](docs/analyzer.md) |
+| Extending the tool | [docs/extending.md](docs/extending.md) |
+| Architectural decisions | [docs/adr/](docs/adr/) |
+| Glossary | [CONTEXT.md](CONTEXT.md) |

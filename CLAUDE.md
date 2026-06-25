@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**MASA Protocols Benchmarking Tool** — C++23 benchmarking framework for IoT/mobility communication protocols in the Modena Automotive Smart Area (MASA) context. Sender and Receiver are **separate processes** run on different machines, correlated by a shared `--run-id`.
+**Protocol Benchmarking Tool** — C++23 benchmarking framework for IoT/mobility communication protocols. Sender and Receiver are **separate processes** run on different machines, correlated by a shared `--run-id`.
 
 ## Build
 
@@ -43,7 +43,7 @@ ctest --test-dir build --output-on-failure
 ## Architecture
 
 ### Wire format
-Fixed 72-byte `WireHeader` (see `include/masa/core/WireHeader.hpp`) prepended to every message. Carries sequence ID, payload sizes, serializer/compressor IDs, CRC32 over compressed payload, and send-side timestamps. `static_assert(sizeof(WireHeader) == 72)` enforces layout.
+Fixed 72-byte `WireHeader` (see `include/pbt/core/WireHeader.hpp`) prepended to every message. Carries sequence ID, payload sizes, serializer/compressor IDs, CRC32 over compressed payload, and send-side timestamps. `static_assert(sizeof(WireHeader) == 72)` enforces layout.
 
 For UDP: each datagram is prefixed with a 24-byte `FragmentHeader` (see `FragmentHeader.hpp`) enabling application-level fragmentation and reassembly.
 

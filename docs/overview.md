@@ -2,7 +2,7 @@
 
 ## What is pb-tool?
 
-**pb-tool** is a cross-machine benchmarking framework for IoT and intelligent-mobility communication protocols, developed in the context of the **MASA** (Modena Automotive Smart Area) research initiative. It measures end-to-end latency, jitter, packet loss, and throughput across the full serialization + compression + transport pipeline, with nanosecond-resolution timestamps and NTP-corrected cross-machine delay.
+**pb-tool** is a cross-machine benchmarking framework for IoT and intelligent-mobility communication protocols. It measures end-to-end latency, jitter, packet loss, and throughput across the full serialization + compression + transport pipeline, with nanosecond-resolution timestamps and NTP-corrected cross-machine delay.
 
 ## Two-process Model
 

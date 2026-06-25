@@ -1,7 +1,7 @@
 [project]
 name = "analyzer"
 version = "0.1.0"
-description = "MASA Protocols Benchmarking Tool — result analyzer and visualizer"
+description = "Protocol Benchmarking Tool — result analyzer and visualizer"
 readme = "README.md"
 authors = [
     { name = "Marco Picone", email = "picone.m@gmail.com" }
