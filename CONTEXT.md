@@ -116,3 +116,25 @@ _Avoid_: reordered, misordered
 **Sequence Gap**:
 The difference `seq_id − (last_received_seq_id + 1)` for a received Message. A value greater than zero indicates the number of Messages presumed lost between this Message and the previous one.
 _Avoid_: loss, missing packets
+
+## Analysis
+
+**Analysis Session**:
+A single invocation of the analyzer tool (`analyzer/`) that selects one or more Runs, validates comparability, and produces a set of output figures (histograms, scatter plots, time series) in a timestamped output subfolder.
+_Avoid_: comparison run, plot session
+
+**Comparable Runs**:
+Two or more Runs whose `message_rate_hz`, `payload_size_bytes`, and `duration_s` are identical. Only Comparable Runs may be overlaid in the same Analysis Session. Selecting incompatible Runs is a hard error.
+_Avoid_: compatible runs, matching runs
+
+**Run Label**:
+The folder name of a Run output directory (`{run_id}_{protocol}_{serializer}_{compression}`), used as the display identifier in the analyzer listing table and plot legends.
+_Avoid_: run name, experiment label
+
+**Latency Dimension**:
+One of the six pipeline stages for which per-packet latency is recorded and individually plotted: `e2e`, `serialization`, `compression`, `transport`, `decompression`, `deserialization`.
+_Avoid_: metric, latency type
+
+**Incomplete Run**:
+A Run folder that is missing one or more of `config.json`, `summary.json`, or `packets.csv`. Shown in the analyzer listing table but excluded from selection.
+_Avoid_: broken run, partial run
