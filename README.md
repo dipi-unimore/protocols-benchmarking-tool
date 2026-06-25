@@ -4,6 +4,71 @@
 
 Cross-machine benchmarking framework for IoT/mobility communication protocols. Measures end-to-end latency, jitter, packet loss, and throughput across the full serialization + compression + transport pipeline, with nanosecond-resolution timestamps and NTP-corrected cross-machine delay.
 
+## Overview
+
+pb-tool runs as two separate processes — a **Sender** and a **Receiver** — typically on different machines, correlated by a shared `--run-id`. Every message flows through a configurable pipeline of serialization → compression → transport before crossing the network, and the Receiver reconstructs per-packet timing for each stage.
+
+```mermaid
+flowchart LR
+    subgraph SENDER["Sender process"]
+        direction LR
+        P([Payload\nsource]) --> S([Serializer]) --> C([Compressor]) --> T([Transport])
+    end
+    subgraph RECEIVER["Receiver process"]
+        direction LR
+        R([Transport]) --> Q([Queue]) --> PP([Packet\nProcessor]) --> CSV([packets.csv\nsummary.json])
+    end
+    T -- "WireHeader\n+ payload" --> R
+```
+
+### Supported combinations
+
+| Layer | Options |
+|-------|---------|
+| **Transport** | `tcp` · `udp` (app-level fragmentation) · `zmq_tcp` (PUSH/PULL or PUB/SUB) · `mqtt_tcp` (QoS 0/1/2) |
+| **Serializer** | `none` (raw bytes passthrough) · `cbor` · `protobuf` |
+| **Compressor** | `none` · `zstd` · `zstd` + pre-trained dictionary |
+| **Payload** | `random` · `text` · `json` · `yaml` · `kv` · `binary` (file-backed, cycled) |
+
+Any transport can be paired with any serializer and any compressor — giving **12 protocol-stack combinations** out of the box.
+
+### What you can measure
+
+| Goal | How |
+|------|-----|
+| Compare TCP vs ZMQ latency | Two runs with same `--rate` / `--payload-size`, different `--protocol` |
+| Cost of Protobuf + Zstd | Run `none/none` vs `protobuf/zstd` — compare `serialization_us` + `compression_us` |
+| UDP packet loss at high rates | `--protocol udp --rate 5000` — check `packet_loss_pct` in `summary.json` |
+| MQTT QoS overhead | Three runs with `--mqtt-qos 0/1/2` — compare `e2e_delay_us` distributions |
+| Dictionary compression on small payloads | `--compression zstd` vs `--compression zstd --zstd-dict dict.zstd` |
+| Warmup vs steady-state latency | `--warmup 5` excludes JIT/buffer fill from statistics |
+
+### Output per run
+
+```
+results/test01_tcp_none_none/
+├── config.json      ← full configuration snapshot (reproducibility record)
+├── packets.csv      ← one row per packet: all timestamps + derived latencies
+└── summary.json     ← mean / p50 / p95 / p99 / p99.9 for each pipeline stage
+```
+
+`summary.json` latency breakdown example:
+
+```json
+"latency": {
+  "e2e":             { "mean_us": 2044, "p95_us": 2250, "p99_us": 2358 },
+  "serialization":   { "mean_us":    0, "p95_us":    0, "p99_us":    0 },
+  "compression":     { "mean_us":    0, "p95_us":    0, "p99_us":    0 },
+  "transport":       { "mean_us": 2038, "p95_us": 2244, "p99_us": 2351 },
+  "decompression":   { "mean_us":    0, "p95_us":    0, "p99_us":    0 },
+  "deserialization": { "mean_us":    0, "p95_us":    0, "p99_us":    0 }
+}
+```
+
+Use the [Python analyzer](docs/analyzer.md) (`cd analyzer && uv run analyzer`) to compare multiple runs interactively with histogram, scatter, and time-series plots.
+
+---
+
 ## Quick Start
 
 ```bash
