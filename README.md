@@ -65,7 +65,26 @@ results/test01_tcp_none_none/
 }
 ```
 
-Use the [Python analyzer](docs/analyzer.md) (`cd analyzer && uv run analyzer`) to compare multiple runs interactively with histogram, scatter, and time-series plots.
+### Analyzer
+
+pb-tool ships with a standalone Python CLI tool (`analyzer/`) for visualizing and comparing runs without writing any code.
+
+```
+cd analyzer && uv run analyzer
+```
+
+It scans the `results/` directory, presents a numbered table of available runs, and — after you pick which ones to compare — generates **34 figures** (PNG + PDF) in a timestamped output folder:
+
+| Figure type | What it shows |
+|-------------|---------------|
+| `hist_{dim}` × 6 | Latency distribution per pipeline stage (overlaid histograms) |
+| `scatter_{dim}` × 6 | Per-packet latency vs elapsed time — every point plotted |
+| `latency_summary` | Grouped bar chart: p50 / p95 / p99 / p99.9 across all stages |
+| `reliability_throughput` | Packet loss, out-of-order count, throughput |
+| `ts_e2e` / `ts_jitter` | Delay and jitter over time (scatter + rolling median) |
+| `ts_throughput` | Bytes/s and msg/s in 1-second bins, twin axes |
+
+Runs are only comparable if they share the same `message_rate_hz`, `payload_size_bytes`, and `duration_s` — mismatches cause a hard exit with a diff table. See [docs/analyzer.md](docs/analyzer.md) for full usage.
 
 ---
 
