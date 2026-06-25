@@ -1,0 +1,12 @@
+[
+  {"vehicle_id": "MASA-001", "timestamp_ms": 1700000000000, "lat": 44.6471, "lon": 10.9252, "speed_kmh": 45.2, "heading_deg": 92.3, "altitude_m": 42.1, "satellites": 8, "rssi_dbm": -72},
+  {"vehicle_id": "MASA-001", "timestamp_ms": 1700000000100, "lat": 44.6472, "lon": 10.9253, "speed_kmh": 45.5, "heading_deg": 92.1, "altitude_m": 42.1, "satellites": 8, "rssi_dbm": -71},
+  {"vehicle_id": "MASA-001", "timestamp_ms": 1700000000200, "lat": 44.6473, "lon": 10.9255, "speed_kmh": 44.8, "heading_deg": 91.9, "altitude_m": 42.2, "satellites": 9, "rssi_dbm": -73},
+  {"vehicle_id": "MASA-002", "timestamp_ms": 1700000000000, "lat": 44.6482, "lon": 10.9261, "speed_kmh": 30.1, "heading_deg": 185.0, "altitude_m": 41.8, "satellites": 7, "rssi_dbm": -80},
+  {"vehicle_id": "MASA-002", "timestamp_ms": 1700000000100, "lat": 44.6481, "lon": 10.9261, "speed_kmh": 30.4, "heading_deg": 185.2, "altitude_m": 41.8, "satellites": 7, "rssi_dbm": -79},
+  {"vehicle_id": "MASA-003", "timestamp_ms": 1700000000000, "lat": 44.6460, "lon": 10.9240, "speed_kmh": 0.0,  "heading_deg": 0.0,   "altitude_m": 43.0, "satellites": 10, "rssi_dbm": -65},
+  {"vehicle_id": "MASA-003", "timestamp_ms": 1700000001000, "lat": 44.6460, "lon": 10.9240, "speed_kmh": 0.0,  "heading_deg": 0.0,   "altitude_m": 43.0, "satellites": 10, "rssi_dbm": -64},
+  {"vehicle_id": "MASA-RSU-01", "timestamp_ms": 1700000000000, "lat": 44.6470, "lon": 10.9250, "speed_kmh": 0.0, "heading_deg": 0.0, "altitude_m": 45.0, "satellites": 12, "rssi_dbm": -50},
+  {"vehicle_id": "MASA-004", "timestamp_ms": 1700000000000, "lat": 44.6490, "lon": 10.9270, "speed_kmh": 60.0, "heading_deg": 270.0, "altitude_m": 40.5, "satellites": 8, "rssi_dbm": -75},
+  {"vehicle_id": "MASA-004", "timestamp_ms": 1700000000100, "lat": 44.6490, "lon": 10.9268, "speed_kmh": 59.8, "heading_deg": 270.1, "altitude_m": 40.5, "satellites": 8, "rssi_dbm": -74}
+]

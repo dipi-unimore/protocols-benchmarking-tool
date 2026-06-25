@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.16)
+project(tinycbor C)
+
+add_library(tinycbor STATIC
+    src/cborencoder.c
+    src/cborencoder_close_container_checked.c
+    src/cborparser.c
+    src/cborparser_dup_string.c
+    src/cborerrorstrings.c
+    src/cborpretty.c
+    src/cborvalidation.c)
+target_include_directories(tinycbor PUBLIC src)

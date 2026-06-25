@@ -1,0 +1,64 @@
+#include "pbt/transport/Receiver.hpp"
+#include "pbt/transport/TcpReceiver.hpp"
+#include "pbt/transport/UdpReceiver.hpp"
+#include "pbt/transport/ZmqTcpReceiver.hpp"
+#include "pbt/transport/MqttTcpReceiver.hpp"
+#include <cstring>
+
+namespace pbt {
+
+Receiver::Receiver(const BenchmarkConfig& cfg,
+                   BoundedBlockingQueue<InboundPacket>& queue,
+                   int64_t ntp_offset_ns)
+    : config_(cfg), queue_(queue), ntp_offset_ns_(ntp_offset_ns) {}
+
+bool Receiver::parse_wire(std::span<const uint8_t> wire,
+                           WireHeader& hdr_out,
+                           std::span<const uint8_t>& payload_out) {
+    if (wire.size() < sizeof(WireHeader)) return false;
+    std::memcpy(&hdr_out, wire.data(), sizeof(WireHeader));
+    if (hdr_out.magic != 0x50425401u) return false;
+    if (wire.size() < sizeof(WireHeader) + hdr_out.payload_size) return false;
+    payload_out = wire.subspan(sizeof(WireHeader), hdr_out.payload_size);
+    return true;
+}
+
+void Receiver::on_wire_bytes(std::span<const uint8_t> wire) {
+    TimePoint ts = Clock::now();
+    WireHeader hdr;
+    std::span<const uint8_t> payload;
+    if (!parse_wire(wire, hdr, payload)) return;
+
+    if (hdr.is_sentinel()) {
+        sentinel_received_      = true;
+        msgs_sent_from_sentinel_ = hdr.sequence_id + 1;
+        return;
+    }
+
+    InboundPacket pkt;
+    pkt.header      = hdr;
+    pkt.wire_payload = Bytes(payload.begin(), payload.end());
+    pkt.ts_received  = ts;
+    pkt.receiver_ntp_offset_ns = ntp_offset_ns_;
+
+    if (!queue_.try_push(std::move(pkt)))
+        overflow_count_.fetch_add(1, std::memory_order_relaxed);
+}
+
+std::unique_ptr<Receiver> Receiver::create(const BenchmarkConfig& cfg,
+                                             BoundedBlockingQueue<InboundPacket>& queue,
+                                             int64_t ntp_offset_ns) {
+    switch (cfg.protocol) {
+        case Protocol::MqttTcp:
+            return std::make_unique<MqttTcpReceiver>(cfg, queue, ntp_offset_ns);
+        case Protocol::ZmqTcp:
+            return std::make_unique<ZmqTcpReceiver>(cfg, queue, ntp_offset_ns);
+        case Protocol::Tcp:
+            return std::make_unique<TcpReceiver>(cfg, queue, ntp_offset_ns);
+        case Protocol::Udp:
+            return std::make_unique<UdpReceiver>(cfg, queue, ntp_offset_ns);
+    }
+    return std::make_unique<TcpReceiver>(cfg, queue, ntp_offset_ns);
+}
+
+}  // namespace pbt

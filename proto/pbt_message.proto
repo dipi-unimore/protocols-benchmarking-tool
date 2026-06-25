@@ -1,0 +1,7 @@
+syntax = "proto3";
+package pbt;
+
+message PbtPayload {
+    bytes  data          = 1;
+    string source_format = 2;
+}

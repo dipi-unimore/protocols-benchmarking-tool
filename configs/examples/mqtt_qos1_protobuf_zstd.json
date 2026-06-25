@@ -1,0 +1,1 @@
+{"protocol":"mqtt_tcp","host":"localhost","port":1883,"serializer":"protobuf","compression":"zstd","payload_file":"payloads/sample_telemetry.json","payload_format":"json","message_rate_hz":100,"duration_s":30,"warmup_s":5,"mqtt_topic":"pbt/bench","mqtt_qos":"1","receiver_timeout_extra_s":5}

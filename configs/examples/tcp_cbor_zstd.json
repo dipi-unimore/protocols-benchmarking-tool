@@ -1,0 +1,1 @@
+{"protocol":"tcp","host":"localhost","port":9003,"serializer":"cbor","compression":"zstd","payload_file":"payloads/sample_telemetry.json","payload_format":"json","message_rate_hz":100,"duration_s":30,"warmup_s":5,"receiver_timeout_extra_s":5}
