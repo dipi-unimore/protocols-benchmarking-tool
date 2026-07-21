@@ -10,6 +10,7 @@ add_executable(test_serializers   unit/test_serializers.cpp)
 add_executable(test_compressors   unit/test_compressors.cpp)
 add_executable(test_benchmark_config unit/test_benchmark_config.cpp)
 add_executable(test_udp_frag      unit/test_udp_fragmentation.cpp)
+add_executable(test_packet_metrics unit/test_packet_metrics.cpp)
 
 foreach(t
     test_wire_header
@@ -18,7 +19,8 @@ foreach(t
     test_serializers
     test_compressors
     test_benchmark_config
-    test_udp_frag)
+    test_udp_frag
+    test_packet_metrics)
   target_include_directories(${t} PRIVATE ${PBT_INCLUDE} ${CMAKE_BINARY_DIR})
   target_link_libraries(${t} PRIVATE
       pbt_compiler_options

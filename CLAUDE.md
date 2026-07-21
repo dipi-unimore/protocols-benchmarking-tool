@@ -71,7 +71,7 @@ PayloadSource → Serializer → Compressor → Transport → network → Receiv
 Network thread: stamps `ts_received`, parses `WireHeader`, `try_push` to `BoundedBlockingQueue` (non-blocking; drops on full). Single processing thread: blocking `pop`, decompress, deserialize, compute metrics, write CSV row. No mutex on sequential state → deterministic metric computation.
 
 ### Clock sync
-SNTP (RFC 4330) via stdlib UDP sockets. Sender embeds its NTP offset in every `WireHeader.ntp_offset_ns`. E2E delay corrected: `(ts_received - ts_sent + sender_offset - receiver_offset) / 1000.0 µs`. Hard error on NTP failure; bypass with `--no-ntp`.
+SNTP (RFC 4330) via stdlib UDP sockets. Sender embeds its NTP offset in every `WireHeader.ntp_offset_ns`. Offset convention: `true_time = local_reading + offset`. E2E delay corrected: `(ts_received - ts_sent + receiver_offset - sender_offset) / 1000.0 µs`. Hard error on NTP failure; bypass with `--no-ntp` (must be passed to both sender and receiver).
 
 ### CMake targets
 - `pbt_core`, `pbt_payload`, `pbt_serialization`, `pbt_compression` — no network deps

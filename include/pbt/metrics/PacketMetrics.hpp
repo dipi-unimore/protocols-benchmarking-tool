@@ -1,7 +1,17 @@
 #pragma once
+#include "pbt/core/Types.hpp"
 #include <cstdint>
 
 namespace pbt {
+
+// NTP offset convention: true_time = local_reading + offset (RFC 4330).
+// So true_send = ts_sent_ns + sender_offset_ns, true_recv = ts_received_ns + receiver_offset_ns,
+// and e2e = true_recv - true_send = (ts_received_ns - ts_sent_ns) + (receiver_offset_ns - sender_offset_ns).
+[[nodiscard]] inline double compute_e2e_delay_us(int64_t ts_received_ns, int64_t ts_sent_ns,
+                                                  int64_t sender_offset_ns,
+                                                  int64_t receiver_offset_ns) noexcept {
+    return ns_to_us((ts_received_ns - ts_sent_ns) + (receiver_offset_ns - sender_offset_ns));
+}
 
 struct PacketMetrics {
     uint64_t seq_id{0};

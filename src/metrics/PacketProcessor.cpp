@@ -76,10 +76,8 @@ PacketMetrics PacketProcessor::compute(InboundPacket& pkt) {
     m.deserialization_us = ns_to_us(m.ts_deserialized_ns - m.ts_decompressed_ns);
     m.processing_us    = ns_to_us(m.ts_processed_ns   - m.ts_deserialized_ns);
 
-    // E2E = (ts_received - ts_sent) + (sender_offset - receiver_offset)
-    m.e2e_delay_us = ns_to_us(
-        (m.ts_received_ns - m.ts_sent_ns)
-        + (m.ntp_offset_sender_ns - m.ntp_offset_receiver_ns));
+    m.e2e_delay_us = compute_e2e_delay_us(m.ts_received_ns, m.ts_sent_ns,
+                                           m.ntp_offset_sender_ns, m.ntp_offset_receiver_ns);
 
     // OOO / duplicate / gap detection
     if (first_packet_) {
