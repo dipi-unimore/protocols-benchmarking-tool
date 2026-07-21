@@ -6,6 +6,7 @@ results/*
 __pycache__/
 .DS_Store
 compile_commands.json
+.cache/
 *.o
 *.a
 *.so
