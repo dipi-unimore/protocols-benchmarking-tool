@@ -14,7 +14,12 @@ enum class ZmqPattern  : uint8_t { PushPull = 0, PubSub = 1 };
 enum class PayloadFmt  : uint8_t { Text = 0, Json = 1, Yaml = 2, Kv = 3, Binary = 4, Random = 5 };
 
 using Bytes     = std::vector<uint8_t>;
-using Clock     = std::chrono::high_resolution_clock;
+// system_clock is the only standard clock guaranteed to be Unix-epoch-based,
+// which cross-machine NTP offset correction requires. high_resolution_clock
+// is implementation-defined and aliases steady_clock (boot-time epoch) on
+// libstdc++/Linux while aliasing system_clock on libc++/macOS, silently
+// breaking cross-machine timestamp comparison.
+using Clock     = std::chrono::system_clock;
 using TimePoint = Clock::time_point;
 using Duration  = std::chrono::nanoseconds;
 

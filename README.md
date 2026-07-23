@@ -8,6 +8,8 @@ Cross-machine benchmarking framework for IoT/mobility communication protocols. M
 
 pb-tool runs as two separate processes — a **Sender** and a **Receiver** — typically on different machines, correlated by a shared `--run-id`. Every message flows through a configurable pipeline of serialization → compression → transport before crossing the network, and the Receiver reconstructs per-packet timing for each stage.
 
+> **Cross-machine clock note:** all timestamps use `std::chrono::system_clock` (Unix epoch), the only standard clock the NTP offset correction can be applied against. Earlier builds used `std::chrono::high_resolution_clock`, which is implementation-defined — it aliases `system_clock` on libc++/macOS but `steady_clock` (boot-time epoch, not wall-clock) on libstdc++/Linux, silently producing nonsensical multi-year `e2e_delay_us` values on mixed-OS runs. If you see astronomically large or negative `e2e_delay_us`, rebuild both Sender and Receiver from a version including this fix (`include/pbt/core/Types.hpp`).
+
 ```mermaid
 flowchart LR
     subgraph SENDER["Sender process"]
