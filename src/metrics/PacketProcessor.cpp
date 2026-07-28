@@ -40,11 +40,23 @@ PacketMetrics PacketProcessor::compute(InboundPacket& pkt) {
     m.ts_serialized_ns   = pkt.header.ts_serialized_ns;
     m.ts_compressed_ns   = pkt.header.ts_compressed_ns;
     m.ts_sent_ns         = pkt.header.ts_sent_ns;
-    m.ntp_offset_sender_ns   = pkt.header.ntp_offset_ns;
-    m.ntp_offset_receiver_ns = pkt.receiver_ntp_offset_ns;
+    m.ntp_offset_sender_ns       = pkt.header.ntp_offset_ns;
+    m.ntp_offset_receiver_ns     = pkt.receiver_ntp_offset_ns;
+    m.ntp_uncertainty_sender_ns  = pkt.header.ntp_uncertainty_ns;
+    m.ntp_uncertainty_receiver_ns = pkt.receiver_ntp_uncertainty_ns;
+    m.ntp_disabled       = pkt.header.is_ntp_disabled();
 
     m.ts_received_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
                            pkt.ts_received.time_since_epoch()).count();
+
+    if (!ntp_captured_) {
+        ntp_captured_ = true;
+        ntp_sender_offset_ns_       = m.ntp_offset_sender_ns;
+        ntp_receiver_offset_ns_     = m.ntp_offset_receiver_ns;
+        ntp_sender_uncertainty_ns_  = m.ntp_uncertainty_sender_ns;
+        ntp_receiver_uncertainty_ns_ = m.ntp_uncertainty_receiver_ns;
+        ntp_disabled_                = m.ntp_disabled;
+    }
 
     // CRC32 validation
     m.crc_ok = (crc32(pkt.wire_payload.data(), pkt.wire_payload.size())
@@ -77,7 +89,10 @@ PacketMetrics PacketProcessor::compute(InboundPacket& pkt) {
     m.processing_us    = ns_to_us(m.ts_processed_ns   - m.ts_deserialized_ns);
 
     m.e2e_delay_us = compute_e2e_delay_us(m.ts_received_ns, m.ts_sent_ns,
-                                           m.ntp_offset_sender_ns, m.ntp_offset_receiver_ns);
+                                           m.ntp_offset_sender_ns, m.ntp_offset_receiver_ns,
+                                           m.ntp_disabled);
+    m.ntp_sync_uncertainty_us = m.ntp_disabled ? 0.0
+        : ns_to_us(m.ntp_uncertainty_sender_ns + m.ntp_uncertainty_receiver_ns);
 
     // OOO / duplicate / gap detection
     if (first_packet_) {
@@ -151,6 +166,14 @@ RunResult PacketProcessor::finalize() const {
     r.total_seq_gap           = total_seq_gap_;
     r.overflow_count          = overflow_count_;
     r.fragment_timeout_count  = fragment_timeout_count_;
+
+    r.ntp_disabled                  = ntp_disabled_;
+    r.ntp_sender_offset_ns          = ntp_sender_offset_ns_;
+    r.ntp_receiver_offset_ns        = ntp_receiver_offset_ns_;
+    r.ntp_sender_uncertainty_ns     = ntp_sender_uncertainty_ns_;
+    r.ntp_receiver_uncertainty_ns   = ntp_receiver_uncertainty_ns_;
+    r.ntp_sync_uncertainty_us       = ntp_disabled_ ? 0.0
+        : ns_to_us(ntp_sender_uncertainty_ns_ + ntp_receiver_uncertainty_ns_);
 
     if (msgs_sent_.has_value() && *msgs_sent_ > 0) {
         uint64_t sent = *msgs_sent_;

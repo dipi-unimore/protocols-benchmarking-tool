@@ -84,7 +84,7 @@ The unit of transmission in a Run. Consists of a fixed WireHeader (metadata + se
 _Avoid_: packet, frame, event
 
 **WireHeader**:
-A fixed 72-byte binary structure prepended to every Message. Carries sequence ID, payload sizes, serializer/compressor identifiers, a CRC32 integrity field over the payload bytes, send-side timestamps, and the Sender's NTP clock offset. All fields are naturally aligned; no compiler padding is added.
+A fixed 80-byte binary structure prepended to every Message. Carries sequence ID, payload sizes, serializer/compressor identifiers, a CRC32 integrity field over the payload bytes, send-side timestamps, and the Sender's NTP clock offset + sync uncertainty. All fields are naturally aligned; no compiler padding is added.
 _Avoid_: header, metadata header
 
 **Integrity Check**:

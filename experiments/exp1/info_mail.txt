@@ -1,0 +1,6 @@
+Per quanto concerne i nodi ne ho provati diversi ma sempre con lo stesso problema:
+
+    I test dei risultati che ti ho mandato sono eseguiti in locale su Mac OS arm
+    Un altro scenario prevedeva come Publisher un Haura (Board Nvidia Jetson) e come subscriber un’altra Haura
+    Un altro ancora Publisher un Haura (Board Nvidia Jetson) e subscriber una delle nostre VM al Masa (x86)
+    Un altro test raspberry pi to raspberry pi

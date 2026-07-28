@@ -9,6 +9,8 @@ Cross-machine benchmarking framework for IoT/mobility communication protocols. M
 pb-tool runs as two separate processes — a **Sender** and a **Receiver** — typically on different machines, correlated by a shared `--run-id`. Every message flows through a configurable pipeline of serialization → compression → transport before crossing the network, and the Receiver reconstructs per-packet timing for each stage.
 
 > **Cross-machine clock note:** all timestamps use `std::chrono::system_clock` (Unix epoch), the only standard clock the NTP offset correction can be applied against. Earlier builds used `std::chrono::high_resolution_clock`, which is implementation-defined — it aliases `system_clock` on libc++/macOS but `steady_clock` (boot-time epoch, not wall-clock) on libstdc++/Linux, silently producing nonsensical multi-year `e2e_delay_us` values on mixed-OS runs. If you see astronomically large or negative `e2e_delay_us`, rebuild both Sender and Receiver from a version including this fix (`include/pbt/core/Types.hpp`).
+>
+> **Still seeing negative `e2e_delay_us` on loopback/LAN runs?** That's SNTP measurement noise, not a bug — a single NTP exchange has an offset error of hundreds of µs to several ms, which can exceed the actual transit delay on fast paths. See [`docs/ntp-sync.md`](docs/ntp-sync.md) for the full explanation and the mitigations below (multi-sample sync, `--ntp-skip-loopback`, `--ntp-server`, sync-uncertainty reporting).
 
 ```mermaid
 flowchart LR
@@ -67,6 +69,34 @@ results/test01_tcp_none_none/
 }
 ```
 
+`summary.json` also reports the NTP sync quality behind that `e2e` block — read this before trusting an `e2e_delay_us` that's small, negative, or surprisingly variable run-to-run:
+
+```json
+"ntp": {
+  "server": "127.0.0.1",
+  "disabled": false,
+  "sender_offset_ns": 45642065,
+  "receiver_offset_ns": 45197637,
+  "sender_uncertainty_ns": 210000,
+  "receiver_uncertainty_ns": 185000,
+  "sync_uncertainty_us": 395.0
+}
+```
+
+`sync_uncertainty_us` is the ± band on `e2e_delay_us` coming from clock-sync error alone (sum of both sides' `uncertainty_ns`, converted to µs) — if it's comparable to or larger than the measured `e2e_delay_us` mean, the sign/magnitude of that mean isn't meaningful yet. `disabled: true` (`--no-ntp` on both sides, or a sender run with `--ntp-skip-loopback` against a loopback target) means no correction was applied or needed; offsets/uncertainty are then irrelevant.
+
+### NTP sync
+
+Every SNTP exchange has an offset error proportional to network path asymmetry — for a public server this is typically hundreds of µs to several ms, which can dominate (even invert the sign of) a loopback/LAN transit delay of only tens to hundreds of µs. See [`docs/ntp-sync.md`](docs/ntp-sync.md) for the full root-cause analysis and reproduction steps. Mitigations:
+
+- **Multi-sample, min-RTT-filtered sync** (on by default) — 8 independent SNTP exchanges at startup, the lowest-RTT one kept (least path asymmetry). No flag needed.
+- **`--ntp-skip-loopback`** (opt-in, off by default) — if `--host` resolves to a loopback address, the sender skips NTP entirely (same clock as the receiver, true offset is 0); the receiver is told via the wire header and ignores its own offset for that run too. Only needs to be passed to the sender.
+- **`--ntp-server <host>`** (or `PBT_NTP_SERVER`) — use a specific NTP server. Without one, pb-tool probes `127.0.0.1` first (a local time daemon has a far more symmetric, lower-error path than a public server) and falls back to `pool.ntp.org` only if nothing answers:
+  ```bash
+  ./build/pb-tool --mode receiver --protocol tcp --port 7001 --ntp-server ntp.internal.lan --run-id r1
+  ```
+- **`--no-ntp`** — skip sync entirely (must be passed to both sides); raw `ts_received - ts_sent` is reported uncorrected.
+
 ### Analyzer
 
 pb-tool ships with a standalone Python CLI tool (`analyzer/`) for visualizing and comparing runs without writing any code.
@@ -118,6 +148,7 @@ cmake --build build -j$(sysctl -n hw.logicalcpu)   # macOS
 | Architecture & UML diagrams | [docs/architecture.md](docs/architecture.md) |
 | Build | [docs/build.md](docs/build.md) |
 | Running & CLI reference | [docs/running.md](docs/running.md) |
+| NTP sync deep dive (root cause + mitigations) | [docs/ntp-sync.md](docs/ntp-sync.md) |
 | Result analysis (Python) | [docs/analyzer.md](docs/analyzer.md) |
 | Extending the tool | [docs/extending.md](docs/extending.md) |
 | Architectural decisions | [docs/adr/](docs/adr/) |

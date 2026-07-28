@@ -1,0 +1,102 @@
+{
+  "config": {
+    "compression": "none",
+    "duration_s": 30,
+    "host": "localhost",
+    "message_rate_hz": 100,
+    "metadata": {},
+    "mqtt_qos": "0",
+    "mqtt_topic": "pbt/bench",
+    "payload_file": "",
+    "payload_format": "random",
+    "payload_size_bytes": 256,
+    "port": 7101,
+    "protocol": "tcp",
+    "receiver_timeout_extra_s": 5,
+    "serializer": "none",
+    "udp_mtu": 1472,
+    "warmup_s": 5,
+    "zmq_pattern": "push_pull",
+    "zmq_topic": "",
+    "zstd_dict_path": ""
+  },
+  "crc_error_count": 0,
+  "duplicate_count": 0,
+  "fragment_timeout_count": 0,
+  "latency": {
+    "compression": {
+      "jitter_us": 0.0,
+      "max_us": 141.0,
+      "mean_us": 0.8227290916366544,
+      "min_us": 0.0,
+      "p50_us": 0.0,
+      "p95_us": 0.0,
+      "p999_us": 0.0,
+      "p99_us": 0.0,
+      "stddev_us": 2.8146667243961137
+    },
+    "decompression": {
+      "jitter_us": 0.0,
+      "max_us": 11429.0,
+      "mean_us": 80.84553821528566,
+      "min_us": 4.0,
+      "p50_us": 0.0,
+      "p95_us": 0.0,
+      "p999_us": 0.0,
+      "p99_us": 0.0,
+      "stddev_us": 435.3801376765389
+    },
+    "deserialization": {
+      "jitter_us": 0.0,
+      "max_us": 136.0,
+      "mean_us": 0.5086034413765474,
+      "min_us": 0.0,
+      "p50_us": 0.0,
+      "p95_us": 0.0,
+      "p999_us": 0.0,
+      "p99_us": 0.0,
+      "stddev_us": 2.39330105824191
+    },
+    "e2e": {
+      "jitter_us": 6.344972486243122,
+      "max_us": 63438.0,
+      "mean_us": 281.78941576630626,
+      "min_us": 20.0,
+      "p50_us": 97.0,
+      "p95_us": 278.0,
+      "p999_us": 48368.015,
+      "p99_us": 4176.049999999999,
+      "stddev_us": 2119.3949736892528
+    },
+    "serialization": {
+      "jitter_us": 0.0,
+      "max_us": 706.0,
+      "mean_us": 5.025910364145675,
+      "min_us": 0.0,
+      "p50_us": 0.0,
+      "p95_us": 0.0,
+      "p999_us": 0.0,
+      "p99_us": 0.0,
+      "stddev_us": 13.790943549429844
+    },
+    "transport": {
+      "jitter_us": 0.0,
+      "max_us": 0.0,
+      "mean_us": 0.0,
+      "min_us": 0.0,
+      "p50_us": 0.0,
+      "p95_us": 0.0,
+      "p999_us": 0.0,
+      "p99_us": 0.0,
+      "stddev_us": 0.0
+    }
+  },
+  "msgs_received": 11993,
+  "msgs_sent": 12000,
+  "out_of_order_count": 0,
+  "overflow_count": 7,
+  "packet_loss_pct": 0.05833333333333801,
+  "throughput_bytes_per_sec": 0.0,
+  "throughput_msgs_per_sec": 0.0,
+  "total_seq_gap": 7
+}

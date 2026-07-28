@@ -13,10 +13,13 @@
 #include "pbt/data/DataManager.hpp"
 #include "pbt/data/CsvPacketWriter.hpp"
 #include "pbt/data/CsvSenderWriter.hpp"
+#include <arpa/inet.h>
 #include <chrono>
 #include <cstdlib>
 #include <format>
 #include <iostream>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -28,6 +31,30 @@ using namespace std::chrono_literals;
 static void die(const std::string& msg) {
     std::cerr << "[ERROR] " << msg << '\n';
     std::exit(1);
+}
+
+// True if `host` resolves to a loopback address (127.0.0.0/8 or ::1). Resolution-based (not a
+// string match on "localhost") so it also catches /etc/hosts aliases pointing at loopback.
+// Used to auto-skip NTP sync for same-host sender/receiver runs: they share one physical clock,
+// so the true offset is 0 and any correction only reintroduces independent-query sync noise
+// (see docs/ntp-sync.md).
+static bool is_loopback_host(const std::string& host) {
+    addrinfo hints{}, *res{};
+    hints.ai_family = AF_UNSPEC;
+    if (getaddrinfo(host.c_str(), nullptr, &hints, &res) != 0) return false;
+    bool loopback = false;
+    for (auto* p = res; p; p = p->ai_next) {
+        if (p->ai_family == AF_INET) {
+            auto addr = ntohl(reinterpret_cast<sockaddr_in*>(p->ai_addr)->sin_addr.s_addr);
+            if ((addr >> 24) == 127) { loopback = true; break; }
+        } else if (p->ai_family == AF_INET6) {
+            if (IN6_IS_ADDR_LOOPBACK(&reinterpret_cast<sockaddr_in6*>(p->ai_addr)->sin6_addr)) {
+                loopback = true; break;
+            }
+        }
+    }
+    freeaddrinfo(res);
+    return loopback;
 }
 
 static void usage() {
@@ -58,6 +85,10 @@ Options:
   --zstd-dict <path>
   --receiver-timeout-extra <s>
   --no-ntp                       Skip NTP sync
+  --ntp-server <host>            NTP server to query (default: try 127.0.0.1 first,
+                                 fall back to pool.ntp.org; env PBT_NTP_SERVER)
+  --ntp-skip-loopback            Sender: skip NTP when --host is loopback (same clock
+                                 as receiver, correction unneeded). Off by default.
   --log-sender                   Write sender_log.csv
   --meta key=value               Add metadata (repeatable)
 )";
@@ -79,6 +110,9 @@ int main(int argc, char* argv[]) {
     std::string config_file;
     bool no_ntp     = false;
     bool log_sender = false;
+    bool has_ntp_server = false;
+    bool ntp_skip_loopback = false;
+    std::string ntp_server_cli;
     BenchmarkConfig cfg;
 
     // CLI overrides
@@ -110,6 +144,8 @@ int main(int argc, char* argv[]) {
         else if (arg == "--run-id")             { run_id          = next(); }
         else if (arg == "--config")             { config_file     = next(); }
         else if (arg == "--no-ntp")             { no_ntp          = true;  }
+        else if (arg == "--ntp-server")         { has_ntp_server  = true; ntp_server_cli = next(); }
+        else if (arg == "--ntp-skip-loopback")  { ntp_skip_loopback = true; }
         else if (arg == "--log-sender")         { log_sender      = true;  }
         else if (arg == "--protocol")           { has_protocol    = true; cfg.protocol    = protocol_from_string(next()); }
         else if (arg == "--host")               { has_host        = true; cfg.host        = next(); }
@@ -166,24 +202,61 @@ int main(int argc, char* argv[]) {
     // Validate
     if (auto v = cfg.validate(); !v) die(v.error().message);
 
-    // NTP sync
-    int64_t ntp_offset_ns = 0;
-    if (!no_ntp) {
-        const char* ntp_server_env = std::getenv("PBT_NTP_SERVER");
-        std::string ntp_server = ntp_server_env ? ntp_server_env : "pool.ntp.org";
-        // Allow manual override via env
-        const char* offset_env = std::getenv("PBT_NTP_OFFSET_NS");
-        if (offset_env) {
-            ntp_offset_ns = std::stoll(offset_env);
+    // NTP sync. Same-host sender+receiver share one physical clock (true offset = 0), so with
+    // --ntp-skip-loopback a sender targeting a loopback address skips NTP entirely rather than
+    // let two independent SNTP queries inject sync noise that can dominate — even invert the
+    // sign of — a loopback transit delay that's only tens to hundreds of microseconds (opt-in,
+    // off by default; see docs/ntp-sync.md).
+    int64_t ntp_offset_ns      = 0;
+    int64_t ntp_uncertainty_ns = 0;
+    std::string ntp_server_used;
+    const bool sender_loopback = ntp_skip_loopback
+                               && mode == "sender" && is_loopback_host(cfg.host);
+
+    if (no_ntp) {
+        // ntp_offset_ns stays 0 — WireHeader::is_ntp_disabled() picks this up automatically.
+    } else if (const char* offset_env = std::getenv("PBT_NTP_OFFSET_NS")) {
+        ntp_offset_ns = std::stoll(offset_env);  // manual override, asserted accurate
+    } else if (sender_loopback) {
+        std::cerr << std::format(
+            "[NTP] loopback target detected (--host {}) — same clock as receiver, "
+            "skipping NTP sync\n", cfg.host);
+    } else {
+        constexpr int kSamples = 8;
+        const bool explicit_server = has_ntp_server || std::getenv("PBT_NTP_SERVER");
+        std::string server = has_ntp_server ? ntp_server_cli
+                            : std::getenv("PBT_NTP_SERVER") ? std::getenv("PBT_NTP_SERVER")
+                            : std::string{};
+
+        std::expected<NtpInfo, Error> res;
+        if (explicit_server) {
+            std::cerr << std::format("[NTP] querying {} ({} samples)...\n", server, kSamples);
+            res = NtpSync::query(server, kSamples);
         } else {
-            std::cerr << "[NTP] querying " << ntp_server << "...\n";
-            auto res = NtpSync::query(ntp_server);
-            if (!res) die(std::format("NTP failed: {}\nUse --no-ntp to skip.", res.error().message));
-            ntp_offset_ns = *res;
-            std::cerr << std::format("[NTP] offset = {:.3f} ms\n",
-                                     static_cast<double>(ntp_offset_ns) / 1e6);
+            // Local-first: a same-LAN/localhost time server has a far more symmetric network
+            // path than a public server, so its offset estimate is proportionally far more
+            // accurate — worth a cheap, short-timeout probe before falling back.
+            server = "127.0.0.1";
+            std::cerr << "[NTP] probing local NTP server (127.0.0.1)...\n";
+            res = NtpSync::query(server, /*samples=*/2, std::chrono::milliseconds{300});
+            if (!res) {
+                server = "pool.ntp.org";
+                std::cerr << std::format(
+                    "[NTP] no local server responding, falling back to {} ({} samples)...\n",
+                    server, kSamples);
+                res = NtpSync::query(server, kSamples);
+            }
         }
+        if (!res) die(std::format("NTP failed: {}\nUse --no-ntp to skip.", res.error().message));
+        ntp_offset_ns      = res->offset_ns;
+        ntp_uncertainty_ns = res->uncertainty_ns;
+        ntp_server_used    = server;
+        std::cerr << std::format(
+            "[NTP] server={} offset={:.3f} ms uncertainty=+/-{:.1f} us\n",
+            server, static_cast<double>(ntp_offset_ns) / 1e6,
+            static_cast<double>(ntp_uncertainty_ns) / 1000.0);
     }
+    const NtpInfo ntp_info{ntp_offset_ns, ntp_uncertainty_ns};
 
     DataManager dm = DataManager::from_env(run_id, cfg);
     if (auto r = dm.init(run_id, cfg); !r) die(r.error().message);
@@ -195,7 +268,7 @@ int main(int argc, char* argv[]) {
         auto ser = Serializer::create(cfg.serializer, to_string(cfg.payload_format));
         auto cmp = Compressor::create(cfg.compression, cfg.zstd_dict_path);
         auto sender = Sender::create(cfg, std::move(*src_res), std::move(ser),
-                                     std::move(cmp), ntp_offset_ns);
+                                     std::move(cmp), ntp_info);
 
         if (auto r = sender->connect(); !r)
             die("connect: " + r.error().message);
@@ -296,7 +369,7 @@ int main(int argc, char* argv[]) {
         PacketProcessor processor(queue, *ser, *cmp, csv_writer, cfg);
         processor.start();
 
-        auto receiver = Receiver::create(cfg, queue, ntp_offset_ns);
+        auto receiver = Receiver::create(cfg, queue, ntp_info);
         if (auto r = receiver->bind(); !r)
             die("bind: " + r.error().message);
         if (auto r = receiver->start(); !r)
@@ -334,6 +407,7 @@ int main(int argc, char* argv[]) {
 
         csv_writer.flush();
         RunResult result = processor.finalize();
+        result.ntp_server = ntp_server_used;
         if (auto r = dm.save_result(result); !r)
             std::cerr << "[WARN] save_result: " << r.error().message << '\n';
 

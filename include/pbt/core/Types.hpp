@@ -28,6 +28,13 @@ struct Error {
     int         code{0};
 };
 
+// RFC 4330 SNTP result: true_time = local_reading + offset_ns.
+// uncertainty_ns bounds the offset error (~half the best sample's RTT); 0 when NTP is disabled.
+struct NtpInfo {
+    int64_t offset_ns{0};
+    int64_t uncertainty_ns{0};
+};
+
 [[nodiscard]] inline int64_t now_ns() noexcept {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
                Clock::now().time_since_epoch()).count();

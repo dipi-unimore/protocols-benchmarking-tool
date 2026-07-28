@@ -69,7 +69,7 @@ Without these variables the MQTT tests are automatically skipped.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PBT_OUTPUT_DIR` | `./results` | Base directory for run output |
-| `PBT_NTP_SERVER` | `pool.ntp.org` | SNTP server hostname |
+| `PBT_NTP_SERVER` | (probe `127.0.0.1`, then `pool.ntp.org`) | SNTP server hostname, same as `--ntp-server` |
 | `PBT_NTP_OFFSET_NS` | (unset) | Manual NTP offset; skips the network query |
 | `MQTT_HOST` | `localhost` | Used by integration tests |
 | `MQTT_PORT` | `1883` | Used by integration tests |

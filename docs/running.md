@@ -193,6 +193,10 @@ Receiver:
 
 Other:
   --no-ntp                 Skip NTP clock sync (use if machines share system NTP/PTP)
+  --ntp-server <host>      NTP server to query (default: try 127.0.0.1 first, fall
+                           back to pool.ntp.org; env PBT_NTP_SERVER)
+  --ntp-skip-loopback      Sender only, opt-in: skip NTP when --host is loopback
+                           (same clock as receiver — see NTP section below)
   --log-sender             Write sender_log.csv (Sender only)
   --meta key=value         Add metadata tag (repeatable)
 ```
@@ -201,14 +205,28 @@ Other:
 
 ## NTP Clock Synchronisation
 
-The tool queries an SNTP server at startup and embeds the offset in every `WireHeader`. End-to-end delay is corrected for clock differences between machines. A failed NTP query is a hard error.
+The tool queries an SNTP server at startup and embeds the offset (plus an uncertainty bound) in
+every `WireHeader`. End-to-end delay is corrected for clock differences between machines. A single
+SNTP exchange has an error proportional to network path asymmetry (hundreds of µs to several ms
+against a public server) — see [docs/ntp-sync.md](ntp-sync.md) for the full analysis of why this
+matters and how it's mitigated. A failed NTP query is a hard error.
 
-Use `--no-ntp` if both machines already share hardware clock sync (e.g. PTP/IEEE 1588).
+- Each side samples the server **8 times** and keeps the lowest-RTT exchange (least path
+  asymmetry, standard NTP client practice), instead of trusting a single shot.
+- Server resolution is **local-first**: without `--ntp-server`/`PBT_NTP_SERVER`, pb-tool probes
+  `127.0.0.1` (cheap, short timeout) before falling back to `pool.ntp.org` — a local time daemon
+  has a far more symmetric path, hence lower error.
+- `--ntp-skip-loopback` (sender only, **off by default**) skips NTP entirely when `--host` is a
+  loopback address — same physical clock as the receiver, true offset is 0, correction only adds
+  noise. The decision travels to the receiver on the wire (`WireHeader` flag), so the receiver
+  ignores its own offset for that run too; nothing needs to be passed to the receiver.
+- `--no-ntp` (both sides) skips sync entirely; `e2e_delay_us` is then the raw, uncorrected
+  `ts_received_ns - ts_sent_ns`.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PBT_NTP_SERVER` | `pool.ntp.org` | SNTP server hostname |
-| `PBT_NTP_OFFSET_NS` | (unset) | Supply an offset directly; skips the network query |
+| `PBT_NTP_SERVER` | (probe `127.0.0.1`, then `pool.ntp.org`) | SNTP server hostname, same as `--ntp-server` |
+| `PBT_NTP_OFFSET_NS` | (unset) | Supply an offset directly; skips the network query (uncertainty reported as 0) |
 
 ---
 
@@ -261,17 +279,19 @@ seq_id, payload_size_bytes, wire_size_bytes,
 ts_created_ns, ts_serialized_ns, ts_compressed_ns, ts_sent_ns,
 ts_received_ns, ts_decompressed_ns, ts_deserialized_ns, ts_processed_ns,
 ntp_offset_sender_ns, ntp_offset_receiver_ns,
-e2e_delay_us, serialization_us, compression_us, transport_us,
+ntp_uncertainty_sender_ns, ntp_uncertainty_receiver_ns, ntp_disabled,
+e2e_delay_us, ntp_sync_uncertainty_us, serialization_us, compression_us, transport_us,
 decompression_us, deserialization_us, processing_us,
 jitter_us, is_out_of_order, is_duplicate, seq_gap
 ```
 
 Key derived columns:
 
-- `e2e_delay_us = (ts_received_ns − ts_sent_ns + ntp_offset_sender_ns − ntp_offset_receiver_ns) / 1000`
+- `e2e_delay_us = (ts_received_ns − ts_sent_ns + ntp_offset_receiver_ns − ntp_offset_sender_ns) / 1000`, or the raw uncorrected delta if `ntp_disabled = 1` (both offsets treated as 0 in that case regardless of their stored values)
+- `ntp_sync_uncertainty_us` — ± band on `e2e_delay_us` from clock-sync error (sum of both sides' uncertainty, in µs); 0 when `ntp_disabled = 1`. See [docs/ntp-sync.md](ntp-sync.md) — don't trust `e2e_delay_us` at a finer resolution than this.
 - `jitter_us = |e2e_delay_us − previous_packet_e2e_delay_us|`
 - `seq_gap > 0` → number of packets presumed lost before this one
 
 ### `summary.json`
 
-Aggregated statistics: mean, stddev, min, max, p50, p95, p99, p99.9 for `e2e` delay and each pipeline stage (`serialization`, `compression`, `transport`, `decompression`, `deserialization`). Also includes: `msgs_sent`, `msgs_received`, `packet_loss_pct`, `out_of_order_count`, `duplicate_count`, `crc_error_count`, `overflow_count`, `throughput_bytes_per_sec`, `throughput_msgs_per_sec`.
+Aggregated statistics: mean, stddev, min, max, p50, p95, p99, p99.9 for `e2e` delay and each pipeline stage (`serialization`, `compression`, `transport`, `decompression`, `deserialization`). Also includes: `msgs_sent`, `msgs_received`, `packet_loss_pct`, `out_of_order_count`, `duplicate_count`, `crc_error_count`, `overflow_count`, `throughput_bytes_per_sec`, `throughput_msgs_per_sec`, and an `ntp` block (`server`, `disabled`, both sides' `*_offset_ns`/`*_uncertainty_ns`, `sync_uncertainty_us`) — see [docs/ntp-sync.md](ntp-sync.md).

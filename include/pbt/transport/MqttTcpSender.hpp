@@ -8,7 +8,7 @@ class MqttTcpSender final : public Sender {
 public:
     MqttTcpSender(const BenchmarkConfig& cfg, std::unique_ptr<PayloadSource> src,
                   std::unique_ptr<Serializer> ser, std::unique_ptr<Compressor> cmp,
-                  int64_t ntp_offset_ns = 0);
+                  NtpInfo ntp_info = {});
     std::expected<void, Error> connect()    override;
     std::expected<void, Error> disconnect() override;
 protected:

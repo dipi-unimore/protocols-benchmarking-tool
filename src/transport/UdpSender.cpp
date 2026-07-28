@@ -17,8 +17,8 @@ UdpSender::UdpSender(const BenchmarkConfig& cfg,
                      std::unique_ptr<PayloadSource> src,
                      std::unique_ptr<Serializer>    ser,
                      std::unique_ptr<Compressor>    cmp,
-                     int64_t ntp_offset_ns)
-    : Sender(cfg, std::move(src), std::move(ser), std::move(cmp), ntp_offset_ns) {}
+                     NtpInfo ntp_info)
+    : Sender(cfg, std::move(src), std::move(ser), std::move(cmp), ntp_info) {}
 
 UdpSender::~UdpSender() {
     if (fd_ >= 0) { ::close(fd_); fd_ = -1; }

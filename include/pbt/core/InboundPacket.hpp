@@ -9,6 +9,7 @@ struct InboundPacket {
     Bytes      wire_payload;            // compressed+serialized bytes after header
     TimePoint  ts_received;             // stamped in network thread before enqueue
     int64_t    receiver_ntp_offset_ns{0};
+    int64_t    receiver_ntp_uncertainty_ns{0};
 };
 
 }  // namespace pbt

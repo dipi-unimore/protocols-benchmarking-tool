@@ -5,8 +5,8 @@ namespace pbt {
 
 ZmqTcpReceiver::ZmqTcpReceiver(const BenchmarkConfig& cfg,
                                  BoundedBlockingQueue<InboundPacket>& queue,
-                                 int64_t ntp_offset_ns)
-    : Receiver(cfg, queue, ntp_offset_ns)
+                                 NtpInfo ntp_info)
+    : Receiver(cfg, queue, ntp_info)
     , socket_(ctx_, cfg.zmq_pattern == ZmqPattern::PubSub ? zmq::socket_type::sub
                                                            : zmq::socket_type::pull) {}
 

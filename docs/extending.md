@@ -94,7 +94,7 @@ public:
                            std::unique_ptr<pbt::PayloadSource> src,
                            std::unique_ptr<pbt::Serializer> ser,
                            std::unique_ptr<pbt::Compressor> cmp,
-                           int64_t ntp_offset_ns = 0);
+                           pbt::NtpInfo ntp_info = {});
     ~MyProtoSender() override;
 
     std::expected<void, pbt::Error> connect()    override;
@@ -118,7 +118,7 @@ class MyProtoReceiver final : public pbt::Receiver {
 public:
     explicit MyProtoReceiver(const pbt::BenchmarkConfig& cfg,
                              pbt::BoundedBlockingQueue<pbt::InboundPacket>& queue,
-                             int64_t ntp_offset_ns = 0);
+                             pbt::NtpInfo ntp_info = {});
     ~MyProtoReceiver() override;
 
     std::expected<void, pbt::Error> bind()  override;
@@ -138,14 +138,14 @@ private:
 case Protocol::MyProto:
     return std::make_unique<MyProtoSender>(cfg, std::move(src),
                                            std::move(ser), std::move(cmp),
-                                           ntp_offset_ns);
+                                           ntp_info);
 ```
 
 **Step 6** — `src/transport/Receiver.cpp`, inside `Receiver::create()`:
 
 ```cpp
 case Protocol::MyProto:
-    return std::make_unique<MyProtoReceiver>(cfg, queue, ntp_offset_ns);
+    return std::make_unique<MyProtoReceiver>(cfg, queue, ntp_info);
 ```
 
 **Step 7** — `src/CMakeLists.txt`:

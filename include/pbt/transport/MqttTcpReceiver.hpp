@@ -9,7 +9,7 @@ class MqttTcpReceiver final : public Receiver, private mqtt::callback {
 public:
     MqttTcpReceiver(const BenchmarkConfig& cfg,
                     BoundedBlockingQueue<InboundPacket>& queue,
-                    int64_t ntp_offset_ns = 0);
+                    NtpInfo ntp_info = {});
     std::expected<void, Error> bind()  override;
     std::expected<void, Error> start() override;
     std::expected<void, Error> stop()  override;

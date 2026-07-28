@@ -45,6 +45,15 @@ nlohmann::json RunResult::to_json() const {
         {"decompression",   latency_to_json(decompression)},
         {"deserialization", latency_to_json(deserialization)},
     };
+    j["ntp"] = {
+        {"server",                  ntp_server},
+        {"disabled",                ntp_disabled},
+        {"sender_offset_ns",        ntp_sender_offset_ns},
+        {"receiver_offset_ns",      ntp_receiver_offset_ns},
+        {"sender_uncertainty_ns",   ntp_sender_uncertainty_ns},
+        {"receiver_uncertainty_ns", ntp_receiver_uncertainty_ns},
+        {"sync_uncertainty_us",     ntp_sync_uncertainty_us},
+    };
     return j;
 }
 

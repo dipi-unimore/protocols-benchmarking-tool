@@ -5,8 +5,8 @@ namespace pbt {
 
 MqttTcpReceiver::MqttTcpReceiver(const BenchmarkConfig& cfg,
                                    BoundedBlockingQueue<InboundPacket>& queue,
-                                   int64_t ntp_offset_ns)
-    : Receiver(cfg, queue, ntp_offset_ns)
+                                   NtpInfo ntp_info)
+    : Receiver(cfg, queue, ntp_info)
     , client_(std::format("tcp://{}:{}", cfg.host, cfg.port), "pbt-receiver") {}
 
 std::expected<void, Error> MqttTcpReceiver::bind() {

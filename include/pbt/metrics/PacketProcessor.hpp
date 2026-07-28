@@ -47,6 +47,15 @@ private:
     bool     first_packet_{true};
     double   last_e2e_delay_us_{0.0};
 
+    // NTP sync diagnostics captured from the first packet (constant for the whole run —
+    // NTP is queried once at process startup, see NtpSync::query call site in main.cpp)
+    bool     ntp_captured_{false};
+    bool     ntp_disabled_{true};
+    int64_t  ntp_sender_offset_ns_{0};
+    int64_t  ntp_receiver_offset_ns_{0};
+    int64_t  ntp_sender_uncertainty_ns_{0};
+    int64_t  ntp_receiver_uncertainty_ns_{0};
+
     WelfordAccumulator e2e_acc_, jitter_acc_, ser_acc_, cmp_acc_,
                        decomp_acc_, deser_acc_, proc_acc_;
 

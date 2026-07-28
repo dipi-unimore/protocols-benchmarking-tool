@@ -10,8 +10,8 @@ ZmqTcpSender::ZmqTcpSender(const BenchmarkConfig& cfg,
                              std::unique_ptr<PayloadSource> src,
                              std::unique_ptr<Serializer>    ser,
                              std::unique_ptr<Compressor>    cmp,
-                             int64_t ntp_offset_ns)
-    : Sender(cfg, std::move(src), std::move(ser), std::move(cmp), ntp_offset_ns)
+                             NtpInfo ntp_info)
+    : Sender(cfg, std::move(src), std::move(ser), std::move(cmp), ntp_info)
     , socket_(ctx_, cfg.zmq_pattern == ZmqPattern::PubSub ? zmq::socket_type::pub
                                                            : zmq::socket_type::push) {}
 

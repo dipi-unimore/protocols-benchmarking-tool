@@ -8,8 +8,8 @@ namespace pbt {
 struct WireHeader {
     // offset  0 — control (8 bytes)
     uint32_t magic{0x50425401u};    // 'PBT1'
-    uint8_t  version{1};
-    uint8_t  flags{0};              // bit0=sentinel, bit1=fragment, bit2=warmup
+    uint8_t  version{2};
+    uint8_t  flags{0};              // bit0=sentinel, bit1=fragment, bit2=warmup, bit3=ntp_disabled
     uint8_t  serializer_id{0};
     uint8_t  compressor_id{0};
     // offset  8 — identity (8 bytes)
@@ -27,15 +27,19 @@ struct WireHeader {
     int64_t  ts_compressed_ns{0};
     int64_t  ts_sent_ns{0};
     int64_t  ntp_offset_ns{0};      // sender's SNTP offset at startup
+    // offset 72 — sync quality (8 bytes)
+    int64_t  ntp_uncertainty_ns{0}; // ~half best-sample RTT; 0 when ntp_disabled
 
-    [[nodiscard]] bool is_sentinel() const noexcept { return (flags & 0x01u) != 0; }
-    [[nodiscard]] bool is_fragment() const noexcept { return (flags & 0x02u) != 0; }
-    [[nodiscard]] bool is_warmup()   const noexcept { return (flags & 0x04u) != 0; }
+    [[nodiscard]] bool is_sentinel()     const noexcept { return (flags & 0x01u) != 0; }
+    [[nodiscard]] bool is_fragment()     const noexcept { return (flags & 0x02u) != 0; }
+    [[nodiscard]] bool is_warmup()       const noexcept { return (flags & 0x04u) != 0; }
+    [[nodiscard]] bool is_ntp_disabled() const noexcept { return (flags & 0x08u) != 0; }
 
-    void set_sentinel() noexcept { flags |= 0x01u; }
-    void set_fragment() noexcept { flags |= 0x02u; }
-    void set_warmup()   noexcept { flags |= 0x04u; }
+    void set_sentinel()     noexcept { flags |= 0x01u; }
+    void set_fragment()     noexcept { flags |= 0x02u; }
+    void set_warmup()       noexcept { flags |= 0x04u; }
+    void set_ntp_disabled() noexcept { flags |= 0x08u; }
 };
-static_assert(sizeof(WireHeader) == 72, "WireHeader must be exactly 72 bytes");
+static_assert(sizeof(WireHeader) == 80, "WireHeader must be exactly 80 bytes");
 
 }  // namespace pbt

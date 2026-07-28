@@ -60,15 +60,15 @@ flowchart LR
 Every message on the wire is:
 
 ```
-[ WireHeader (72 bytes) ][ compressed+serialized payload bytes ]
+[ WireHeader (80 bytes) ][ compressed+serialized payload bytes ]
 ```
 
-**WireHeader** (72 bytes, naturally aligned, enforced by `static_assert`):
+**WireHeader** (80 bytes, naturally aligned, enforced by `static_assert`):
 
 | Field | Size | Description |
 |-------|------|-------------|
 | `magic` | 4 B | `'PBT1'` — identifies the protocol |
-| `flags` | 1 B | bit0=sentinel, bit1=fragment, bit2=warmup |
+| `flags` | 1 B | bit0=sentinel, bit1=fragment, bit2=warmup, bit3=ntp_disabled |
 | `serializer_id` | 1 B | identifies the serializer used |
 | `compressor_id` | 1 B | identifies the compressor used |
 | `padding` | 1 B | alignment |
@@ -83,18 +83,21 @@ Every message on the wire is:
 | `ts_compressed_ns` | 8 B | nanosecond timestamp: after compression |
 | `ts_sent_ns` | 8 B | nanosecond timestamp: just before socket write |
 | `ntp_offset_ns` | 8 B | sender's SNTP clock offset vs. UTC |
+| `ntp_uncertainty_ns` | 8 B | sender's sync error bound (~half the best sample's RTT); 0 when NTP is disabled |
 
 **UDP fragmentation**: each datagram is further prefixed with a 24-byte `FragmentHeader` (`'PBTF'` magic, message ID, fragment index/count, data size). The receiver reassembles fragments before processing the `WireHeader`.
 
 ## NTP Clock Synchronisation
 
-Both Sender and Receiver independently query an SNTP server at startup. The Sender embeds its offset in every `WireHeader.ntp_offset_ns`. The Receiver uses its own offset at processing time. End-to-End Delay is corrected as:
+Both Sender and Receiver independently query an SNTP server at startup (`NtpSync::query`: 8 samples, lowest-RTT one kept — see [docs/ntp-sync.md](ntp-sync.md) for why a single sample isn't enough). The Sender embeds its offset + uncertainty in every `WireHeader`. The Receiver uses its own offset at processing time. End-to-End Delay is corrected as:
 
 ```
-e2e_delay_us = (ts_received_ns − ts_sent_ns + ntp_offset_sender_ns − ntp_offset_receiver_ns) / 1000
+e2e_delay_us = (ts_received_ns − ts_sent_ns + ntp_offset_receiver_ns − ntp_offset_sender_ns) / 1000
 ```
 
-Use `--no-ntp` if both machines share a hardware clock or PTP sync.
+unless `WireHeader.flags` bit3 (`is_ntp_disabled()`) is set, in which case both offsets are treated as 0 (raw, uncorrected delay) regardless of what either side's local NTP query returned.
+
+Use `--no-ntp` (both sides) if both machines share a hardware clock or PTP sync, or `--ntp-skip-loopback` (sender only, opt-in) for same-host loopback runs where the true offset is 0 by construction. See [docs/ntp-sync.md](ntp-sync.md) for the full root-cause analysis, all mitigations, and how to read `ntp_sync_uncertainty_us` in `summary.json`/`packets.csv`.
 
 ## Output Layout
 

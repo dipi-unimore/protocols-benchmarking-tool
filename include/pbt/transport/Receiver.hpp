@@ -14,7 +14,7 @@ class Receiver {
 public:
     Receiver(const BenchmarkConfig& cfg,
              BoundedBlockingQueue<InboundPacket>& queue,
-             int64_t ntp_offset_ns = 0);
+             NtpInfo ntp_info = {});
     virtual ~Receiver() = default;
 
     virtual std::expected<void, Error> bind()  = 0;
@@ -31,7 +31,7 @@ public:
 
     static std::unique_ptr<Receiver> create(const BenchmarkConfig& cfg,
                                              BoundedBlockingQueue<InboundPacket>& queue,
-                                             int64_t ntp_offset_ns = 0);
+                                             NtpInfo ntp_info = {});
 
 protected:
     void on_wire_bytes(std::span<const uint8_t> wire);
@@ -42,7 +42,7 @@ protected:
 
     const BenchmarkConfig&               config_;
     BoundedBlockingQueue<InboundPacket>& queue_;
-    int64_t                              ntp_offset_ns_{0};
+    NtpInfo                               ntp_info_{};
     std::atomic<uint64_t>               overflow_count_{0};
     bool                                 sentinel_received_{false};
     uint64_t                             msgs_sent_from_sentinel_{0};

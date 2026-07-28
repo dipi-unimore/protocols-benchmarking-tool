@@ -6,7 +6,7 @@
 using namespace pbt;
 
 TEST(WireHeader, Size) {
-    EXPECT_EQ(sizeof(WireHeader), 72u);
+    EXPECT_EQ(sizeof(WireHeader), 80u);
 }
 
 TEST(FragmentHeader, Size) {
@@ -44,11 +44,14 @@ TEST(WireHeader, Flags) {
     EXPECT_FALSE(h.is_sentinel());
     EXPECT_FALSE(h.is_fragment());
     EXPECT_FALSE(h.is_warmup());
+    EXPECT_FALSE(h.is_ntp_disabled());
     h.set_sentinel();
     EXPECT_TRUE(h.is_sentinel());
     h.set_fragment();
     EXPECT_TRUE(h.is_fragment());
     h.set_warmup();
     EXPECT_TRUE(h.is_warmup());
-    EXPECT_EQ(h.flags, 0x07u);
+    h.set_ntp_disabled();
+    EXPECT_TRUE(h.is_ntp_disabled());
+    EXPECT_EQ(h.flags, 0x0Fu);
 }

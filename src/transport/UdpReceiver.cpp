@@ -11,8 +11,8 @@ namespace pbt {
 
 UdpReceiver::UdpReceiver(const BenchmarkConfig& cfg,
                          BoundedBlockingQueue<InboundPacket>& queue,
-                         int64_t ntp_offset_ns)
-    : Receiver(cfg, queue, ntp_offset_ns) {}
+                         NtpInfo ntp_info)
+    : Receiver(cfg, queue, ntp_info) {}
 
 UdpReceiver::~UdpReceiver() {
     if (fd_ >= 0) { ::close(fd_); fd_ = -1; }

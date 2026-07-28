@@ -10,7 +10,8 @@ std::string CsvPacketWriter::header() {
            "ts_created_ns,ts_serialized_ns,ts_compressed_ns,ts_sent_ns,"
            "ts_received_ns,ts_decompressed_ns,ts_deserialized_ns,ts_processed_ns,"
            "ntp_offset_sender_ns,ntp_offset_receiver_ns,"
-           "e2e_delay_us,serialization_us,compression_us,transport_us,"
+           "ntp_uncertainty_sender_ns,ntp_uncertainty_receiver_ns,ntp_disabled,"
+           "e2e_delay_us,ntp_sync_uncertainty_us,serialization_us,compression_us,transport_us,"
            "decompression_us,deserialization_us,processing_us,"
            "jitter_us,is_out_of_order,is_duplicate,seq_gap\n";
 }
@@ -41,8 +42,11 @@ void CsvPacketWriter::write_row(const PacketMetrics& m) {
                         m.ts_deserialized_ns, m.ts_processed_ns);
     out_ << std::format("{},{},",
                         m.ntp_offset_sender_ns, m.ntp_offset_receiver_ns);
-    out_ << std::format("{:.3f},{:.3f},{:.3f},{:.3f},",
-                        m.e2e_delay_us, m.serialization_us,
+    out_ << std::format("{},{},{},",
+                        m.ntp_uncertainty_sender_ns, m.ntp_uncertainty_receiver_ns,
+                        m.ntp_disabled ? 1 : 0);
+    out_ << std::format("{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},",
+                        m.e2e_delay_us, m.ntp_sync_uncertainty_us, m.serialization_us,
                         m.compression_us, m.transport_us);
     out_ << std::format("{:.3f},{:.3f},{:.3f},",
                         m.decompression_us, m.deserialization_us, m.processing_us);

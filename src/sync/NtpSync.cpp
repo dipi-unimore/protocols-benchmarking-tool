@@ -41,8 +41,8 @@ static int64_t ntp_to_ns(uint32_t sec_be, uint32_t frac_be) {
     return ns;
 }
 
-std::expected<int64_t, Error>
-NtpSync::query(const std::string& server, int retries,
+std::expected<NtpInfo, Error>
+NtpSync::query(const std::string& server, int samples,
                std::chrono::milliseconds timeout) {
     addrinfo hints{}, *res{};
     hints.ai_family   = AF_INET;
@@ -50,7 +50,11 @@ NtpSync::query(const std::string& server, int retries,
     if (getaddrinfo(server.c_str(), "123", &hints, &res) != 0)
         return std::unexpected(Error{std::format("NTP: getaddrinfo failed for {}", server)});
 
-    for (int attempt = 0; attempt < retries; ++attempt) {
+    bool    have_best = false;
+    int64_t best_offset_ns{0};
+    int64_t best_rtt_ns{0};
+
+    for (int attempt = 0; attempt < samples; ++attempt) {
         int fd = ::socket(AF_INET, SOCK_DGRAM, 0);
         if (fd < 0) continue;
 
@@ -73,18 +77,35 @@ NtpSync::query(const std::string& server, int retries,
         int64_t t4 = now_ns();
         ::close(fd);
         if (n < static_cast<ssize_t>(sizeof(rsp))) continue;
+        // RFC 4330 §8: stratum 0 is a Kiss-o'-Death packet (e.g. server rate-limiting a client
+        // that polls too often, common with pool.ntp.org under repeated back-to-back queries) —
+        // its timestamp fields are not valid time data and MUST NOT be used for sync. Treating
+        // one as a real reply here previously produced offsets off by years, dwarfing even the
+        // ordinary single-sample SNTP noise this function exists to filter out.
+        if (rsp.stratum == 0) continue;
 
         int64_t t2 = ntp_to_ns(rsp.recv_ts_sec, rsp.recv_ts_frac);
         int64_t t3 = ntp_to_ns(rsp.tx_ts_sec,   rsp.tx_ts_frac);
 
         // Offset = ((T2 - T1) + (T3 - T4)) / 2
         int64_t offset_ns = ((t2 - t1) + (t3 - t4)) / 2;
-        freeaddrinfo(res);
-        return offset_ns;
+        // RTT = (T4 - T1) - (T3 - T2); its magnitude bounds the offset error under
+        // the algorithm's symmetric-path assumption, and the sample with the
+        // smallest RTT is statistically the one with the least path asymmetry.
+        int64_t rtt_ns = (t4 - t1) - (t3 - t2);
+        if (rtt_ns < 0) rtt_ns = 0;
+
+        if (!have_best || rtt_ns < best_rtt_ns) {
+            best_offset_ns = offset_ns;
+            best_rtt_ns    = rtt_ns;
+            have_best      = true;
+        }
     }
     freeaddrinfo(res);
-    return std::unexpected(Error{std::format(
-        "NTP: all {} retries failed for {}", retries, server)});
+    if (!have_best)
+        return std::unexpected(Error{std::format(
+            "NTP: all {} samples failed for {}", samples, server)});
+    return NtpInfo{best_offset_ns, best_rtt_ns / 2};
 }
 
 }  // namespace pbt

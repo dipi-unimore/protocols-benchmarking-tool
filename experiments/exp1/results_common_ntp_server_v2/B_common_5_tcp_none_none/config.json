@@ -1,0 +1,22 @@
+{
+  "compression": "none",
+  "duration_s": 10,
+  "host": "127.0.0.1",
+  "message_rate_hz": 1000,
+  "metadata": {},
+  "mqtt_qos": "0",
+  "mqtt_topic": "pbt/bench",
+  "payload_file": "",
+  "payload_format": "random",
+  "payload_size_bytes": 512,
+  "port": 7515,
+  "protocol": "tcp",
+  "receiver_timeout_extra_s": 5,
+  "run_id": "B_common_5",
+  "serializer": "none",
+  "udp_mtu": 1472,
+  "warmup_s": 2,
+  "zmq_pattern": "push_pull",
+  "zmq_topic": "",
+  "zstd_dict_path": ""
+}

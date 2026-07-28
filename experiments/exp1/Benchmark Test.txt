@@ -1,0 +1,105 @@
+
+## B1 — TCP baseline
+
+Receiver:
+```bash
+./build/app/pb-tool --mode receiver \
+  --protocol tcp --port 7001 \
+  --run-id B1_tcp
+```
+[NTP] querying pool.ntp.org...
+[NTP] offset = 121.151 ms
+[READY] listening on tcp://0.0.0.0:7001
+[DONE] received=35000 loss_pct=0.00 e2e_mean_us=-447.5
+
+
+Sender:
+```bash
+./build/app/pb-tool --mode sender \
+  --protocol tcp --host 127.0.0.1 --port 7001 \
+  --payload-format random --payload-size 512 \
+  --rate 1000 --duration 30 --warmup 5 \
+  --run-id B1_tcp
+```
+[NTP] querying pool.ntp.org...
+[NTP] offset = 121.667 ms
+[SENDER] warmup: 5000 messages
+[WARN] rate behind target: expected=1000 hz measured=999 hz
+[SENDER] measuring: 30000 messages
+[WARN] rate behind target: expected=1000 hz measured=996 hz
+[WARN] rate behind target: expected=1000 hz measured=1000 hz
+[WARN] rate behind target: expected=1000 hz measured=1000 hz
+[WARN] rate behind target: expected=1000 hz measured=1000 hz
+[SENDER] done. msgs_sent=30000
+---
+
+## B2 — UDP baseline
+
+Receiver:
+```bash
+./build/app/pb-tool --mode receiver \
+  --protocol udp --port 7002 \
+  --run-id B2_udp
+```
+[NTP] querying pool.ntp.org...
+[NTP] offset = 157.324 ms
+[READY] listening on udp://0.0.0.0:7002
+[DONE] received=35000 loss_pct=0.00 e2e_mean_us=42562.5
+
+Sender:
+```bash
+./build/app/pb-tool --mode sender \
+  --protocol udp --host 127.0.0.1 --port 7002 \
+  --payload-format random --payload-size 512 \
+  --rate 1000 --duration 30 --warmup 5 \
+  --run-id B2_udp
+```
+[NTP] querying pool.ntp.org...
+[NTP] offset = 121.647 ms
+[SENDER] warmup: 5000 messages
+[WARN] rate behind target: expected=1000 hz measured=998 hz
+[SENDER] measuring: 30000 messages
+[WARN] rate behind target: expected=1000 hz measured=1000 hz
+[WARN] rate behind target: expected=1000 hz measured=1000 hz
+[WARN] rate behind target: expected=1000 hz measured=1000 hz
+[WARN] rate behind target: expected=1000 hz measured=1000 hz
+[SENDER] done. msgs_sent=30000
+
+---
+
+## B3 — ZMQ PUSH/PULL baseline
+
+Receiver:
+```bash
+./build/app/pb-tool --mode receiver \
+  --protocol zmq_tcp --zmq-pattern push_pull \
+  --port 7003 \
+  --run-id B3_zmq_pushpull
+```
+[NTP] querying pool.ntp.org...
+[NTP] offset = 121.652 ms
+[READY] listening on zmq_tcp://0.0.0.0:7003
+[DONE] received=35000 loss_pct=0.00 e2e_mean_us=-154.7
+
+
+Sender:
+```bash
+./build/app/pb-tool --mode sender \
+  --protocol zmq_tcp --zmq-pattern push_pull \
+  --host 127.0.0.1 --port 7003 \
+  --payload-format random --payload-size 512 \
+  --rate 1000 --duration 30 --warmup 5 \
+  --run-id B3_zmq_pushpull
+```
+[NTP] querying pool.ntp.org...
+[NTP] offset = 121.932 ms
+[SENDER] warmup: 5000 messages
+[WARN] rate behind target: expected=1000 hz measured=998 hz
+[SENDER] measuring: 30000 messages
+[WARN] rate behind target: expected=1000 hz measured=999 hz
+[WARN] rate behind target: expected=1000 hz measured=999 hz
+[WARN] rate behind target: expected=1000 hz measured=1000 hz
+[WARN] rate behind target: expected=1000 hz measured=1000 hz
+[WARN] rate behind target: expected=1000 hz measured=1000 hz
+[SENDER] done. msgs_sent=30000
+---

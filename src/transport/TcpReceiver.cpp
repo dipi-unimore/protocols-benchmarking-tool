@@ -14,8 +14,8 @@ namespace pbt {
 
 TcpReceiver::TcpReceiver(const BenchmarkConfig& cfg,
                          BoundedBlockingQueue<InboundPacket>& queue,
-                         int64_t ntp_offset_ns)
-    : Receiver(cfg, queue, ntp_offset_ns) {}
+                         NtpInfo ntp_info)
+    : Receiver(cfg, queue, ntp_info) {}
 
 TcpReceiver::~TcpReceiver() {
     if (server_fd_ >= 0) { ::close(server_fd_); server_fd_ = -1; }

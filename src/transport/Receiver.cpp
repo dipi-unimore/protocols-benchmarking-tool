@@ -9,8 +9,8 @@ namespace pbt {
 
 Receiver::Receiver(const BenchmarkConfig& cfg,
                    BoundedBlockingQueue<InboundPacket>& queue,
-                   int64_t ntp_offset_ns)
-    : config_(cfg), queue_(queue), ntp_offset_ns_(ntp_offset_ns) {}
+                   NtpInfo ntp_info)
+    : config_(cfg), queue_(queue), ntp_info_(ntp_info) {}
 
 bool Receiver::parse_wire(std::span<const uint8_t> wire,
                            WireHeader& hdr_out,
@@ -39,7 +39,8 @@ void Receiver::on_wire_bytes(std::span<const uint8_t> wire) {
     pkt.header      = hdr;
     pkt.wire_payload = Bytes(payload.begin(), payload.end());
     pkt.ts_received  = ts;
-    pkt.receiver_ntp_offset_ns = ntp_offset_ns_;
+    pkt.receiver_ntp_offset_ns      = ntp_info_.offset_ns;
+    pkt.receiver_ntp_uncertainty_ns = ntp_info_.uncertainty_ns;
 
     if (!queue_.try_push(std::move(pkt)))
         overflow_count_.fetch_add(1, std::memory_order_relaxed);
@@ -47,18 +48,18 @@ void Receiver::on_wire_bytes(std::span<const uint8_t> wire) {
 
 std::unique_ptr<Receiver> Receiver::create(const BenchmarkConfig& cfg,
                                              BoundedBlockingQueue<InboundPacket>& queue,
-                                             int64_t ntp_offset_ns) {
+                                             NtpInfo ntp_info) {
     switch (cfg.protocol) {
         case Protocol::MqttTcp:
-            return std::make_unique<MqttTcpReceiver>(cfg, queue, ntp_offset_ns);
+            return std::make_unique<MqttTcpReceiver>(cfg, queue, ntp_info);
         case Protocol::ZmqTcp:
-            return std::make_unique<ZmqTcpReceiver>(cfg, queue, ntp_offset_ns);
+            return std::make_unique<ZmqTcpReceiver>(cfg, queue, ntp_info);
         case Protocol::Tcp:
-            return std::make_unique<TcpReceiver>(cfg, queue, ntp_offset_ns);
+            return std::make_unique<TcpReceiver>(cfg, queue, ntp_info);
         case Protocol::Udp:
-            return std::make_unique<UdpReceiver>(cfg, queue, ntp_offset_ns);
+            return std::make_unique<UdpReceiver>(cfg, queue, ntp_info);
     }
-    return std::make_unique<TcpReceiver>(cfg, queue, ntp_offset_ns);
+    return std::make_unique<TcpReceiver>(cfg, queue, ntp_info);
 }
 
 }  // namespace pbt

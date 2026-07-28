@@ -19,7 +19,7 @@ public:
            std::unique_ptr<PayloadSource> src,
            std::unique_ptr<Serializer>    ser,
            std::unique_ptr<Compressor>    cmp,
-           int64_t ntp_offset_ns = 0);
+           NtpInfo ntp_info = {});
     virtual ~Sender() = default;
 
     // Stamps all send-side timestamps; ts_sent stamped BEFORE assemble+do_send.
@@ -35,7 +35,7 @@ public:
                                            std::unique_ptr<PayloadSource> src,
                                            std::unique_ptr<Serializer>    ser,
                                            std::unique_ptr<Compressor>    cmp,
-                                           int64_t ntp_offset_ns = 0);
+                                           NtpInfo ntp_info = {});
 
 protected:
     virtual std::expected<void, Error> do_send(std::span<const uint8_t> wire) = 0;
@@ -47,7 +47,7 @@ protected:
     std::unique_ptr<PayloadSource> source_;
     std::unique_ptr<Serializer>    serializer_;
     std::unique_ptr<Compressor>    compressor_;
-    int64_t                        ntp_offset_ns_{0};
+    NtpInfo                        ntp_info_{};
 };
 
 }  // namespace pbt

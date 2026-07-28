@@ -1,0 +1,111 @@
+{
+  "config": {
+    "compression": "none",
+    "duration_s": 30,
+    "host": "localhost",
+    "message_rate_hz": 100,
+    "metadata": {},
+    "mqtt_qos": "0",
+    "mqtt_topic": "pbt/bench",
+    "payload_file": "",
+    "payload_format": "random",
+    "payload_size_bytes": 256,
+    "port": 7415,
+    "protocol": "tcp",
+    "receiver_timeout_extra_s": 5,
+    "serializer": "none",
+    "udp_mtu": 1472,
+    "warmup_s": 5,
+    "zmq_pattern": "push_pull",
+    "zmq_topic": "",
+    "zstd_dict_path": ""
+  },
+  "crc_error_count": 0,
+  "duplicate_count": 0,
+  "fragment_timeout_count": 0,
+  "latency": {
+    "compression": {
+      "jitter_us": 0.0,
+      "max_us": 52.0,
+      "mean_us": 0.8409000000000024,
+      "min_us": 0.0,
+      "p50_us": 0.0,
+      "p95_us": 0.0,
+      "p999_us": 0.0,
+      "p99_us": 0.0,
+      "stddev_us": 2.729493030439964
+    },
+    "decompression": {
+      "jitter_us": 0.0,
+      "max_us": 376.0,
+      "mean_us": 27.369699999999945,
+      "min_us": 6.0,
+      "p50_us": 0.0,
+      "p95_us": 0.0,
+      "p999_us": 0.0,
+      "p99_us": 0.0,
+      "stddev_us": 17.40834647411108
+    },
+    "deserialization": {
+      "jitter_us": 0.0,
+      "max_us": 91.0,
+      "mean_us": 0.4964000000000001,
+      "min_us": 0.0,
+      "p50_us": 0.0,
+      "p95_us": 0.0,
+      "p999_us": 0.0,
+      "p99_us": 0.0,
+      "stddev_us": 1.5896036373802072
+    },
+    "e2e": {
+      "jitter_us": 0.06791304130413041,
+      "max_us": -300753194580624.2,
+      "mean_us": -300753194581277.6,
+      "min_us": -300753194581303.25,
+      "p50_us": -300753194581217.2,
+      "p95_us": -300753194581109.25,
+      "p999_us": -300753194580874.25,
+      "p99_us": -300753194581017.2,
+      "stddev_us": 90.91340775665184
+    },
+    "serialization": {
+      "jitter_us": 0.0,
+      "max_us": 338.0,
+      "mean_us": 6.182800000000003,
+      "min_us": 0.0,
+      "p50_us": 0.0,
+      "p95_us": 0.0,
+      "p999_us": 0.0,
+      "p99_us": 0.0,
+      "stddev_us": 9.677579744697107
+    },
+    "transport": {
+      "jitter_us": 0.0,
+      "max_us": 0.0,
+      "mean_us": 0.0,
+      "min_us": 0.0,
+      "p50_us": 0.0,
+      "p95_us": 0.0,
+      "p999_us": 0.0,
+      "p99_us": 0.0,
+      "stddev_us": 0.0
+    }
+  },
+  "msgs_received": 12000,
+  "msgs_sent": 12000,
+  "ntp": {
+    "disabled": false,
+    "receiver_offset_ns": 148927282,
+    "receiver_uncertainty_ns": 5822372,
+    "sender_offset_ns": 300753194730253500,
+    "sender_uncertainty_ns": 5513500,
+    "server": "pool.ntp.org",
+    "sync_uncertainty_us": 11335.872
+  },
+  "out_of_order_count": 0,
+  "overflow_count": 0,
+  "packet_loss_pct": 0.0,
+  "throughput_bytes_per_sec": 0.0,
+  "throughput_msgs_per_sec": 0.0,
+  "total_seq_gap": 0
+}

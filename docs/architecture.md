@@ -234,9 +234,11 @@ classDiagram
         +int64_t ts_compressed_ns
         +int64_t ts_sent_ns
         +int64_t ntp_offset_ns
+        +int64_t ntp_uncertainty_ns
         +is_sentinel() bool
         +is_fragment() bool
         +is_warmup() bool
+        +is_ntp_disabled() bool
     }
     class BenchmarkConfig {
         +Protocol protocol
@@ -391,17 +393,21 @@ sequenceDiagram
     participant NTP as NtpSync
     participant Server as SNTP server
 
-    Main->>NTP: query(server, retries=3, timeout=3s)
-    NTP->>Server: SNTP Request UDP/123 (T1=local send time)
-    Server-->>NTP: SNTP Response (T2=server recv, T3=server send)
-    Note over NTP: T4 = local recv time
-    NTP->>NTP: offset = ((T2−T1) + (T3−T4)) / 2
-    NTP-->>Main: int64_t offset_ns
+    Main->>NTP: query(server, samples=8, timeout=3s)
+    loop 8 independent exchanges
+        NTP->>Server: SNTP Request UDP/123 (T1=local send time)
+        Server-->>NTP: SNTP Response (T2=server recv, T3=server send)
+        Note over NTP: T4 = local recv time
+        NTP->>NTP: offset = ((T2−T1)+(T3−T4))/2, rtt = (T4−T1)−(T3−T2)
+    end
+    NTP->>NTP: keep sample with min(rtt) — least path asymmetry
+    NTP-->>Main: NtpInfo{offset_ns, uncertainty_ns = min_rtt/2}
 
-    Note over Main: Embedded in every WireHeader.ntp_offset_ns
+    Note over Main: Sender: skips this entirely if --ntp-skip-loopback\nand --host is loopback (offset/uncertainty = 0,\nWireHeader.flags bit3 = ntp_disabled)
+    Note over Main: Embedded in every WireHeader.ntp_offset_ns\n+ ntp_uncertainty_ns
 
     Note over Main: Receiver applies own offset at processing time
-    Note over Main: E2E = (ts_received − ts_sent\n+ sender_offset − receiver_offset) / 1000 µs
+    Note over Main: E2E = ntp_disabled ? (ts_received − ts_sent)\n: (ts_received − ts_sent + receiver_offset − sender_offset)\n(µs, both offsets forced to 0 when ntp_disabled)
 ```
 
 ## CMake Module Dependency Graph

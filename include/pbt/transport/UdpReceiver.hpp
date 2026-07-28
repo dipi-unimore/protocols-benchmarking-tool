@@ -9,7 +9,7 @@ class UdpReceiver final : public Receiver {
 public:
     UdpReceiver(const BenchmarkConfig& cfg,
                 BoundedBlockingQueue<InboundPacket>& queue,
-                int64_t ntp_offset_ns = 0);
+                NtpInfo ntp_info = {});
     ~UdpReceiver() override;
     std::expected<void, Error> bind()  override;
     std::expected<void, Error> start() override;
